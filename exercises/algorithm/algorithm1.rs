@@ -2,7 +2,6 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -69,15 +68,61 @@ impl<T> LinkedList<T> {
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
-	{
-		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
+    pub fn merge(mut list_a: LinkedList<T>, mut list_b: LinkedList<T>) -> Self
+    where
+        T: Ord,
+    {
+        let mut merged_list = LinkedList::new();
+
+        let mut current_a = list_a.start;
+        let mut current_b = list_b.start;
+
+        while current_a.is_some() || current_b.is_some() {
+            match (current_a, current_b) {
+                (Some(node_a), Some(node_b)) => {
+                    let node_a_val = unsafe { &(*node_a.as_ptr()).val };
+                    let node_b_val = unsafe { &(*node_b.as_ptr()).val };
+
+                    if node_a_val <= node_b_val {
+                        let next = unsafe { (*node_a.as_ptr()).next };
+                        merged_list.add_node(node_a);
+                        current_a = next;
+                        current_b = Some(node_b);
+                    } else {
+                        let next = unsafe { (*node_b.as_ptr()).next };
+                        merged_list.add_node(node_b);
+                        current_a = Some(node_a);
+                        current_b = next;
+                    }
+                }
+                (Some(node_a), None) => {
+                    let next = unsafe { (*node_a.as_ptr()).next };
+                    merged_list.add_node(node_a);
+                    current_a = next;
+                }
+                (None, Some(node_b)) => {
+                    let next = unsafe { (*node_b.as_ptr()).next };
+                    merged_list.add_node(node_b);
+                    current_b = next;
+                }
+                (None, None) => break,
+            }
         }
-	}
+
+        merged_list.length = list_a.length + list_b.length;
+        merged_list
+    }
+
+    fn add_node(&mut self, node: NonNull<Node<T>>) {
+        let node_ptr = Some(node);
+        match self.end {
+            None => self.start = node_ptr,
+            Some(end_ptr) => unsafe { (*end_ptr.as_ptr()).next = node_ptr },
+        }
+        self.end = node_ptr;
+        unsafe { (*node.as_ptr()).next = None };
+    }
+
 }
 
 impl<T> Display for LinkedList<T>
